@@ -3,4 +3,12 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* CDIL Color Scheme */
+  --color-cdil-purple: #4a1e7f;
+  --color-cdil-purple-dark: #3a1665;
+  --color-cdil-purple-light: #5c2a99;
+  --color-cdil-cyan: #00b4d8;
+  --color-cdil-cyan-dark: #0096c7;
+  --color-cdil-cyan-light: #48cae4;
 }
