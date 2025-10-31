@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/shaqu/AppData/Local/Programs/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
