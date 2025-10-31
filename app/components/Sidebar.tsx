@@ -13,8 +13,10 @@ import {
   faUsers,
   faBars,
   faChevronLeft,
+  faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
 import type { SidebarProps, MenuItem, MenuSection } from '@/app/types/sidebar';
+import { logoutAction } from '../actions/auth';
 
 // Define menu items for teachers (admin role)
 const teacherMenuItems: MenuItem[] = [
@@ -22,14 +24,14 @@ const teacherMenuItems: MenuItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: faGauge,
-    href: '/teacher/dashboard',
+    href: '/dashboard',
     roles: ['admin', 'superadmin'],
   },
   {
     id: 'courses',
     label: 'Courses',
     icon: faBook,
-    href: '/teacher/courses',
+    href: '/courses',
     roles: ['admin', 'superadmin'],
   },
   {
@@ -54,14 +56,14 @@ const studentMenuItems: MenuItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: faGauge,
-    href: '/student/dashboard',
+    href: '/dashboard',
     roles: ['user'],
   },
   {
     id: 'courses',
     label: 'Courses',
     icon: faBook,
-    href: '/student/courses',
+    href: '/courses',
     roles: ['user'],
   },
   {
@@ -189,7 +191,7 @@ export default function Sidebar({
 
         {/* User Profile */}
         <div className="border-t border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+          <div className="mb-3 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cdil-purple text-white font-semibold">
               {userAvatar ? (
                 <img
@@ -216,6 +218,17 @@ export default function Sidebar({
               <p className="text-sm text-gray-500">{roleLabel}</p>
             </div>
           </div>
+
+          {/* Logout Button */}
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
+          </form>
         </div>
       </aside>
     </>
