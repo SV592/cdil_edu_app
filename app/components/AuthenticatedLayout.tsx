@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import ThemeToggle from './ThemeToggle';
 import type { CurrentUser } from '@/lib/auth';
 
 interface AuthenticatedLayoutProps {
@@ -33,7 +34,9 @@ export default function AuthenticatedLayout({
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      <main className="flex-1 bg-gray-50 pt-20 md:pt-0">{children}</main>
+      <main className="flex-1 bg-base-200 pt-20 md:pt-0">{children}</main>
+
+      <ThemeToggle />
     </div>
   );
 }
