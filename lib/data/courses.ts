@@ -1,5 +1,11 @@
 import { query } from '../db';
-import type { CourseWithDetails } from '@/app/types/course';
+import type {
+  CourseWithDetails,
+  CourseDetails,
+  Module,
+  Lesson,
+  Material,
+} from '@/app/types/course';
 
 // Transform database
 function transformCourseRow(row: any): CourseWithDetails {
@@ -335,6 +341,149 @@ export async function unenrollStudent(
     return false;
   } catch (error) {
     console.error('Error unenrolling student:', error);
+    throw error;
+  }
+}
+
+export async function getCourseDetailsWithModules(
+  courseId: number,
+  userId: number,
+  userRole: 'user' | 'admin' | 'superadmin'
+): Promise<CourseDetails | null> {
+  try {
+    const isStudent = userRole === 'user';
+    const studentId = isStudent ? userId : undefined;
+
+    const course = await getCourseById(courseId, studentId);
+    if (!course) return null;
+
+    const modulesSql = `
+      SELECT
+        m.id,
+        m.course_id as "courseId",
+        m.title,
+        m.description,
+        m.order_index as "orderIndex",
+        m.status,
+        m.estimated_duration_hours as "estimatedDurationHours"
+      FROM modules m
+      WHERE m.course_id = $1
+      ORDER BY m.order_index ASC;
+    `;
+
+    const modulesResult = await query<any>(modulesSql, [courseId]);
+    const modules: Module[] = [];
+
+    for (const moduleRow of modulesResult.rows) {
+      const lessonsSql = `
+        SELECT
+          l.id,
+          l.module_id as "moduleId",
+          l.title,
+          l.description,
+          l.content,
+          l.content_type as "contentType",
+          l.lesson_date as "lessonDate",
+          l.order_index as "orderIndex",
+          l.status,
+          l.duration_minutes as "durationMinutes",
+          l.learning_objectives as "learningObjectives",
+          l.is_live as "isLive",
+          l.delivery_mode as "deliveryMode",
+          l.session_time as "sessionTime",
+          l.meeting_link as "meetingLink"
+        FROM lessons l
+        WHERE l.module_id = $1
+        ORDER BY l.order_index ASC;
+      `;
+
+      const lessonsResult = await query<any>(lessonsSql, [moduleRow.id]);
+      const lessons: Lesson[] = [];
+
+      for (const lessonRow of lessonsResult.rows) {
+        const materialsSql = `
+          SELECT
+            mat.id,
+            mat.title,
+            mat.description,
+            mat.resource_type as "resourceType",
+            mat.resource_url as "resourceUrl",
+            mat.format,
+            mat.source,
+            mat.order_index as "orderIndex"
+          FROM materials mat
+          WHERE mat.lesson_id = $1
+          ORDER BY mat.order_index ASC;
+        `;
+
+        const materialsResult = await query<any>(materialsSql, [lessonRow.id]);
+        const materials: Material[] = materialsResult.rows.map((mat) => ({
+          id: mat.id,
+          title: mat.title,
+          description: mat.description,
+          resourceType: mat.resourceType,
+          resourceUrl: mat.resourceUrl,
+          format: mat.format,
+          source: mat.source,
+          orderIndex: Number(mat.orderIndex),
+        }));
+
+        lessons.push({
+          id: lessonRow.id,
+          moduleId: lessonRow.moduleId,
+          title: lessonRow.title,
+          description: lessonRow.description,
+          content: lessonRow.content,
+          contentType: lessonRow.contentType,
+          lessonDate: lessonRow.lessonDate ? new Date(lessonRow.lessonDate) : null,
+          orderIndex: Number(lessonRow.orderIndex),
+          status: lessonRow.status,
+          durationMinutes: lessonRow.durationMinutes ? Number(lessonRow.durationMinutes) : null,
+          learningObjectives: lessonRow.learningObjectives,
+          isLive: lessonRow.isLive,
+          deliveryMode: lessonRow.deliveryMode,
+          sessionTime: lessonRow.sessionTime,
+          meetingLink: lessonRow.meetingLink,
+          materials,
+        });
+      }
+
+      modules.push({
+        id: moduleRow.id,
+        courseId: moduleRow.courseId,
+        title: moduleRow.title,
+        description: moduleRow.description,
+        orderIndex: Number(moduleRow.orderIndex),
+        status: moduleRow.status,
+        estimatedDurationHours: moduleRow.estimatedDurationHours
+          ? Number(moduleRow.estimatedDurationHours)
+          : null,
+        lessons,
+      });
+    }
+
+    const totalLessons = modules.reduce(
+      (sum, module) => sum + module.lessons.length,
+      0
+    );
+    const totalDurationMinutes = modules.reduce(
+      (sum, module) =>
+        sum +
+        module.lessons.reduce(
+          (lessonSum, lesson) => lessonSum + (lesson.durationMinutes || 0),
+          0
+        ),
+      0
+    );
+
+    return {
+      ...course,
+      modules,
+      totalLessons,
+      totalDurationMinutes,
+    };
+  } catch (error) {
+    console.error('Error fetching course details:', error);
     throw error;
   }
 }

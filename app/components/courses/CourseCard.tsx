@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBook,
@@ -21,6 +22,7 @@ export default function CourseCard({
   onEnroll,
   onEdit,
 }: CourseCardProps) {
+  const router = useRouter();
   const isStudent = userRole === 'user';
   const isInstructor = userRole === 'admin' || userRole === 'superadmin';
 
@@ -53,11 +55,7 @@ export default function CourseCard({
   };
 
   const handleAction = () => {
-    if (isStudent && onEnroll && !course.isEnrolled) {
-      onEnroll(course.id);
-    } else if (isInstructor && onEdit) {
-      onEdit(course.id);
-    }
+    router.push(`/courses/${course.id}`);
   };
 
   const getActionButtonText = () => {

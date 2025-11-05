@@ -60,3 +60,55 @@ export interface CourseGridProps {
   currentPage?: number;
   totalPages?: number;
 }
+
+export type ContentType = 'video' | 'text' | 'interactive' | 'quiz';
+export type LessonStatus = 'published' | 'draft';
+export type ResourceType = 'pdf' | 'video' | 'link' | 'document' | 'presentation';
+export type MaterialScope = 'course' | 'module' | 'lesson';
+
+export interface Material {
+  id: number;
+  title: string;
+  description: string | null;
+  resourceType: ResourceType;
+  resourceUrl: string;
+  format: string;
+  source: string | null;
+  orderIndex: number;
+}
+
+export interface Lesson {
+  id: number;
+  moduleId: number;
+  title: string;
+  description: string | null;
+  content: string | null;
+  contentType: ContentType;
+  lessonDate: Date | null;
+  orderIndex: number;
+  status: LessonStatus;
+  durationMinutes: number | null;
+  learningObjectives: string | null;
+  isLive: boolean;
+  deliveryMode: DeliveryMode;
+  sessionTime: string | null;
+  meetingLink: string | null;
+  materials: Material[];
+}
+
+export interface Module {
+  id: number;
+  courseId: number;
+  title: string;
+  description: string | null;
+  orderIndex: number;
+  status: LessonStatus;
+  estimatedDurationHours: number | null;
+  lessons: Lesson[];
+}
+
+export interface CourseDetails extends CourseWithDetails {
+  modules: Module[];
+  totalLessons: number;
+  totalDurationMinutes: number;
+}
