@@ -132,11 +132,12 @@ async function CoursesContent({ page }: { page: number }) {
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
   const user = await getCurrentUser();
   const roleLabel = isInstructor(user) ? 'Instructor' : 'Student';
-  const page = Number(searchParams?.page) || 1;
+  const resolvedParams = await searchParams;
+  const page = Number(resolvedParams?.page) || 1;
 
   return (
     <div className="p-8">
