@@ -11,6 +11,7 @@ export default function CourseGrid({
   userRole,
   currentPage = 1,
   totalPages = 1,
+  showPagination = true,
 }: CourseGridProps) {
   const isInstructor = userRole === 'admin' || userRole === 'superadmin';
 
@@ -60,7 +61,7 @@ export default function CourseGrid({
         ))}
       </div>
 
-      {totalPages > 1 && (
+      {showPagination && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

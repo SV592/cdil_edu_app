@@ -19,6 +19,7 @@ export async function enrollInCourse(courseId: number) {
 
     if (enrolled) {
       revalidatePath('/courses');
+      revalidatePath(`/courses/${courseId}`);
       return {
         success: true,
         message: 'Successfully enrolled in course',
@@ -53,6 +54,7 @@ export async function dropCourse(courseId: number) {
 
     if (dropped) {
       revalidatePath('/courses');
+      revalidatePath(`/courses/${courseId}`);
       return {
         success: true,
         message: 'Successfully dropped course',

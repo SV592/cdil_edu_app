@@ -59,6 +59,7 @@ export interface CourseGridProps {
   userRole: 'user' | 'admin' | 'superadmin';
   currentPage?: number;
   totalPages?: number;
+  showPagination?: boolean;
 }
 
 export type ContentType = 'video' | 'text' | 'interactive' | 'quiz';

@@ -26,35 +26,88 @@ async function CoursesContent({ page }: { page: number }) {
     const user = await getCurrentUser();
     const limit = 9;
 
-    let courses;
-    let totalCount;
-
     if (isInstructor(user)) {
-      courses = await getCoursesForInstructor(
+      const courses = await getCoursesForInstructor(
         user.instructorId!,
         user.role === 'superadmin',
         page,
         limit
       );
-      totalCount = await getCoursesCountForInstructor(
+      const totalCount = await getCoursesCountForInstructor(
         user.instructorId!,
         user.role === 'superadmin'
       );
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return (
+        <CourseGrid
+          courses={courses}
+          userRole={user.role}
+          currentPage={page}
+          totalPages={totalPages}
+        />
+      );
     } else {
-      courses = await getCoursesForStudent(user.studentId!, page, limit);
-      totalCount = await getCoursesCountForStudent(user.studentId!);
+      // For students, separate enrolled and available courses
+      const allCourses = await getCoursesForStudent(user.studentId!, page, limit);
+      const enrolledCourses = allCourses.filter(course => course.isEnrolled);
+      const availableCourses = allCourses.filter(course => !course.isEnrolled);
+
+      return (
+        <div className="space-y-12">
+          {enrolledCourses.length > 0 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-cdil-purple">My Enrolled Courses</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Continue learning from where you left off
+                </p>
+              </div>
+              <CourseGrid
+                courses={enrolledCourses}
+                userRole={user.role}
+                currentPage={1}
+                totalPages={1}
+                showPagination={false}
+              />
+            </div>
+          )}
+
+          {availableCourses.length > 0 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-cdil-purple">
+                  {enrolledCourses.length > 0 ? 'Available Courses' : 'Browse Courses'}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Discover new courses to expand your knowledge
+                </p>
+              </div>
+              <CourseGrid
+                courses={availableCourses}
+                userRole={user.role}
+                currentPage={1}
+                totalPages={1}
+                showPagination={false}
+              />
+            </div>
+          )}
+
+          {enrolledCourses.length === 0 && availableCourses.length === 0 && (
+            <div className="flex min-h-[400px] items-center justify-center rounded-lg bg-gray-50 p-8">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  No Courses Available
+                </h3>
+                <p className="mt-2 text-gray-600">
+                  Check back later for new courses.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
     }
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return (
-      <CourseGrid
-        courses={courses}
-        userRole={user.role}
-        currentPage={page}
-        totalPages={totalPages}
-      />
-    );
   } catch (error) {
     console.error('Error fetching courses:', error);
     return (

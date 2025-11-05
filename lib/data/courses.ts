@@ -9,6 +9,10 @@ import type {
 
 // Transform database
 function transformCourseRow(row: any): CourseWithDetails {
+  console.log('[DEBUG] transformCourseRow - Input row.isEnrolled:', row.isEnrolled, 'Type:', typeof row.isEnrolled, 'Course:', row.title);
+  const transformed = row.isEnrolled === true;
+  console.log('[DEBUG] transformCourseRow - Transformed isEnrolled:', transformed);
+
   return {
     ...row,
     startDate: row.startDate ? new Date(row.startDate) : row.startDate,
@@ -22,6 +26,7 @@ function transformCourseRow(row: any): CourseWithDetails {
     creditHours: row.creditHours ? Number(row.creditHours) : row.creditHours,
     maxEnrollment: row.maxEnrollment ? Number(row.maxEnrollment) : row.maxEnrollment,
     currentEnrollment: row.currentEnrollment ? Number(row.currentEnrollment) : row.currentEnrollment,
+    isEnrolled: transformed,
   };
 }
 
@@ -101,6 +106,14 @@ export async function getCoursesForStudent(
   `;
 
   const result = await query<CourseWithDetails>(sql, [studentId, limit, offset]);
+  console.log('[DEBUG] getCoursesForStudent - studentId:', studentId);
+  console.log('[DEBUG] getCoursesForStudent - raw result count:', result.rows.length);
+  console.log('[DEBUG] getCoursesForStudent - isEnrolled values:', result.rows.map(r => ({
+    courseId: r.id,
+    title: r.title,
+    isEnrolled: r.isEnrolled,
+    type: typeof r.isEnrolled
+  })));
   return result.rows.map(transformCourseRow);
 }
 
@@ -252,6 +265,11 @@ export async function getCourseById(
 
   const params = studentId ? [courseId, studentId] : [courseId];
   const result = await query<CourseWithDetails>(sql, params);
+
+  console.log('[DEBUG] getCourseById - courseId:', courseId, 'studentId:', studentId);
+  if (result.rows.length > 0) {
+    console.log('[DEBUG] getCourseById - raw isEnrolled:', result.rows[0].isEnrolled, 'Type:', typeof result.rows[0].isEnrolled, 'Course:', result.rows[0].title);
+  }
 
   return result.rows.length > 0 ? transformCourseRow(result.rows[0]) : null;
 }

@@ -26,7 +26,7 @@ export default async function CourseDetailPage({
 
   const courseDetails = await getCourseDetailsWithModules(
     courseId,
-    user.id,
+    user.studentId || user.instructorId || user.id,
     user.role
   );
 
