@@ -27,7 +27,7 @@ export default async function RootLayout({
   const user = await getUserOrNull();
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme="cdil-light">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
