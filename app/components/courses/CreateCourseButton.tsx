@@ -1,12 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 export default function CreateCourseButton() {
+  const router = useRouter();
+
   const handleCreate = () => {
-    console.log('Create new course clicked');
-    // TODO: Open course creation modal/form
+    router.push('/courses/new');
   };
 
   return (
