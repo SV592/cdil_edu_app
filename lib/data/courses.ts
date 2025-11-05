@@ -9,9 +9,7 @@ import type {
 
 // Transform database
 function transformCourseRow(row: any): CourseWithDetails {
-  console.log('[DEBUG] transformCourseRow - Input row.isEnrolled:', row.isEnrolled, 'Type:', typeof row.isEnrolled, 'Course:', row.title);
   const transformed = row.isEnrolled === true;
-  console.log('[DEBUG] transformCourseRow - Transformed isEnrolled:', transformed);
 
   return {
     ...row,
@@ -106,14 +104,6 @@ export async function getCoursesForStudent(
   `;
 
   const result = await query<CourseWithDetails>(sql, [studentId, limit, offset]);
-  console.log('[DEBUG] getCoursesForStudent - studentId:', studentId);
-  console.log('[DEBUG] getCoursesForStudent - raw result count:', result.rows.length);
-  console.log('[DEBUG] getCoursesForStudent - isEnrolled values:', result.rows.map(r => ({
-    courseId: r.id,
-    title: r.title,
-    isEnrolled: r.isEnrolled,
-    type: typeof r.isEnrolled
-  })));
   return result.rows.map(transformCourseRow);
 }
 
@@ -169,7 +159,11 @@ export async function getCoursesForInstructor(
     LEFT JOIN departments d ON c.department_id = d.id
     LEFT JOIN modules m ON c.id = m.course_id
     LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-    WHERE c.created_by = $1 OR $2 = true
+    WHERE (
+      c.created_by IN (
+        SELECT user_id FROM instructors WHERE id = $1
+      ) OR $2 = true
+    )
     GROUP BY c.id, d.name
     ORDER BY c.created_at DESC
     LIMIT $3 OFFSET $4;
@@ -265,11 +259,6 @@ export async function getCourseById(
 
   const params = studentId ? [courseId, studentId] : [courseId];
   const result = await query<CourseWithDetails>(sql, params);
-
-  console.log('[DEBUG] getCourseById - courseId:', courseId, 'studentId:', studentId);
-  if (result.rows.length > 0) {
-    console.log('[DEBUG] getCourseById - raw isEnrolled:', result.rows[0].isEnrolled, 'Type:', typeof result.rows[0].isEnrolled, 'Course:', result.rows[0].title);
-  }
 
   return result.rows.length > 0 ? transformCourseRow(result.rows[0]) : null;
 }
@@ -502,6 +491,181 @@ export async function getCourseDetailsWithModules(
     };
   } catch (error) {
     console.error('Error fetching course details:', error);
+    throw error;
+  }
+}
+
+export async function getDepartments(): Promise<{ id: number; name: string }[]> {
+  const sql = `
+    SELECT id, name
+    FROM departments
+    ORDER BY name ASC;
+  `;
+
+  const result = await query<{ id: number; name: string }>(sql, []);
+  return result.rows;
+}
+
+export async function createCourse(
+  courseData: {
+    title: string;
+    courseCode: string;
+    description: string;
+    departmentId: number | null;
+    program: string | null;
+    startDate: Date;
+    endDate: Date;
+    durationWeeks: number | null;
+    status: string;
+    difficultyLevel: string | null;
+    creditHours: number | null;
+    maxEnrollment: number | null;
+    learningOutcomes: string | null;
+    prerequisites: string | null;
+    language: string;
+    campus: string | null;
+    deliveryMode: string;
+    location: string | null;
+    createdBy: number;
+  }
+): Promise<number> {
+  try {
+    const sql = `
+      INSERT INTO courses (
+        title,
+        course_code,
+        description,
+        department_id,
+        program,
+        start_date,
+        end_date,
+        duration_weeks,
+        status,
+        difficulty_level,
+        credit_hours,
+        max_enrollment,
+        current_enrollment,
+        learning_outcomes,
+        prerequisites,
+        language,
+        campus,
+        delivery_mode,
+        location,
+        created_by,
+        created_at,
+        updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, 0, $13, $14, $15, $16, $17, $18, $19,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )
+      RETURNING id;
+    `;
+
+    const result = await query<{ id: number }>(sql, [
+      courseData.title,
+      courseData.courseCode,
+      courseData.description,
+      courseData.departmentId,
+      courseData.program,
+      courseData.startDate,
+      courseData.endDate,
+      courseData.durationWeeks,
+      courseData.status,
+      courseData.difficultyLevel,
+      courseData.creditHours,
+      courseData.maxEnrollment,
+      courseData.learningOutcomes,
+      courseData.prerequisites,
+      courseData.language,
+      courseData.campus,
+      courseData.deliveryMode,
+      courseData.location,
+      courseData.createdBy,
+    ]);
+
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error creating course:', error);
+    throw error;
+  }
+}
+
+export async function updateCourse(
+  courseId: number,
+  courseData: {
+    title: string;
+    courseCode: string;
+    description: string;
+    departmentId: number | null;
+    program: string | null;
+    startDate: Date;
+    endDate: Date;
+    durationWeeks: number | null;
+    status: string;
+    difficultyLevel: string | null;
+    creditHours: number | null;
+    maxEnrollment: number | null;
+    learningOutcomes: string | null;
+    prerequisites: string | null;
+    language: string;
+    campus: string | null;
+    deliveryMode: string;
+    location: string | null;
+  }
+): Promise<boolean> {
+  try {
+    const sql = `
+      UPDATE courses
+      SET
+        title = $1,
+        course_code = $2,
+        description = $3,
+        department_id = $4,
+        program = $5,
+        start_date = $6,
+        end_date = $7,
+        duration_weeks = $8,
+        status = $9,
+        difficulty_level = $10,
+        credit_hours = $11,
+        max_enrollment = $12,
+        learning_outcomes = $13,
+        prerequisites = $14,
+        language = $15,
+        campus = $16,
+        delivery_mode = $17,
+        location = $18,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $19
+      RETURNING id;
+    `;
+
+    const result = await query<{ id: number }>(sql, [
+      courseData.title,
+      courseData.courseCode,
+      courseData.description,
+      courseData.departmentId,
+      courseData.program,
+      courseData.startDate,
+      courseData.endDate,
+      courseData.durationWeeks,
+      courseData.status,
+      courseData.difficultyLevel,
+      courseData.creditHours,
+      courseData.maxEnrollment,
+      courseData.learningOutcomes,
+      courseData.prerequisites,
+      courseData.language,
+      courseData.campus,
+      courseData.deliveryMode,
+      courseData.location,
+      courseId,
+    ]);
+
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error updating course:', error);
     throw error;
   }
 }
